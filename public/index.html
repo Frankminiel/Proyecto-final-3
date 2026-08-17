@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockFlow - Gestión de Inventario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <h1 class="mb-4 text-primary font-weight-bold">StockFlow - Inventario</h1>
+
+        <!-- Formulario de producto -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-dark text-white font-weight-bold">Agregar Nuevo Producto</div>
+            <div class="card-body">
+                <form id="productForm" class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" id="name" class="form-control" placeholder="Nombre" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" id="sku" class="form-control" placeholder="SKU" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" id="quantity" class="form-control" placeholder="Cantidad" min="0" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" id="price" class="form-control" step="0.01" placeholder="Precio ($)" min="0" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de datos -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white font-weight-bold">Productos Registrados</div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>SKU</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/products';
+
+        async function loadProducts() {
+            const res = await fetch(API_URL);
+            const products = await res.json();
+            const table = document.getElementById('productTable');
+            table.innerHTML = products.map(p => `
+                <tr>
+                    <td>${p.name}</td>
+                    <td><code>${p.sku}</code></td>
+                    <td>${p.quantity}</td>
+                    <td>$${p.price}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('name').value,
+                sku: document.getElementById('sku').value,
+                quantity: Number(document.getElementById('quantity').value),
+                price: Number(document.getElementById('price').value)
+            };
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            e.target.reset();
+            loadProducts();
+        });
+
+        async function deleteProduct(id) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            loadProducts();
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
